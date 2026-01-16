@@ -13,11 +13,21 @@
             color: #fff;
         }
 
-        h1 {
-            text-align: center;
-            padding: 15px;
-            margin: 0;
+        header {
             background: #111;
+            padding: 15px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        header p {
+            margin: 5px 0 0;
+            font-size: 14px;
+            opacity: 0.8;
         }
 
         .container {
@@ -44,12 +54,12 @@
         .nome {
             font-size: 16px;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .numero {
             font-size: 14px;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
         }
 
         .promotor {
@@ -60,7 +70,10 @@
 </head>
 <body>
 
-<h1>📱 Clientes WhatsApp</h1>
+<header>
+    <h1>📱 Clientes WhatsApp</h1>
+    <p id="contador">Carregando clientes...</p>
+</header>
 
 <div class="container" id="lista"></div>
 
@@ -70,17 +83,23 @@ async function carregarCSV() {
     const texto = await response.text();
 
     const linhas = texto.trim().split("\n");
+
     const container = document.getElementById("lista");
+    const contador = document.getElementById("contador");
 
-    linhas.forEach(linha => {
-        const colunas = linha.split("\t");
+    let total = 0;
 
-        // Índices conforme seu CSV
-        const apelido = colunas[3];
-        const whatsapp = colunas[5];
-        const promotor = colunas[6];
+    // Começa do índice 1 para ignorar o cabeçalho
+    for (let i = 1; i < linhas.length; i++) {
+        const colunas = linhas[i].split("\t");
 
-        if (!apelido || !whatsapp) return;
+        if (colunas.length < 7) continue;
+
+        const apelido = colunas[3].trim();
+        const whatsapp = colunas[5].trim();
+        const promotor = colunas[6].trim();
+
+        if (!apelido || !whatsapp) continue;
 
         const card = document.createElement("div");
         card.className = "card";
@@ -92,14 +111,14 @@ async function carregarCSV() {
         `;
 
         card.onclick = () => {
-            window.open(
-                `https://wa.me/55${whatsapp}`,
-                "_blank"
-            );
+            window.open(`https://wa.me/55${whatsapp}`, "_blank");
         };
 
         container.appendChild(card);
-    });
+        total++;
+    }
+
+    contador.textContent = `Total de Clientes: ${total}`;
 }
 
 carregarCSV();
