@@ -12,6 +12,51 @@ body {
     background: #0b0b0b;
     color: #fff;
 }
+
+/* ===== OVERLAY LOGIN ===== */
+#loginOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+#loginOverlay.hide {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(1.05);
+}
+.login-box {
+    background: #111;
+    padding: 30px;
+    border-radius: 14px;
+    width: 90%;
+    max-width: 320px;
+    text-align: center;
+}
+.login-box input {
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+}
+.login-box button {
+    margin-top: 15px;
+    padding: 12px;
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    background: #00ff88;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* ===== APP ===== */
 header {
     background: #111;
     padding: 15px;
@@ -24,6 +69,22 @@ header h1 {
 header span {
     font-size: 14px;
     opacity: 0.8;
+}
+.controls {
+    padding: 10px;
+    text-align: center;
+}
+.controls input {
+    width: 90%;
+    max-width: 400px;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 15px;
+    margin-bottom: 10px;
+}
+.toggle {
+    font-size: 14px;
 }
 .container {
     padding: 15px;
@@ -45,7 +106,6 @@ header span {
 }
 .nome {
     font-weight: bold;
-    margin-bottom: 6px;
 }
 .numero {
     font-size: 14px;
@@ -54,20 +114,69 @@ header span {
     font-size: 13px;
     opacity: 0.8;
 }
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+}
+.pagination button {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+}
+.pagination button:disabled {
+    opacity: 0.4;
+}
 </style>
 </head>
 
 <body>
 
+<!-- OVERLAY LOGIN -->
+<div id="loginOverlay">
+    <div class="login-box">
+        <h2>🔒 Acesso restrito</h2>
+        <input type="password" id="senha" placeholder="Digite a senha">
+        <button onclick="verificarSenha()">Entrar</button>
+    </div>
+</div>
+
 <header>
-    <h1>📱 Clientes WhatsApp</h1>
-    <span id="total">0 clientes</span>
+    <h1>FACILITADOR DE VIDAS</h1>
+    <span id="total">Exibindo 0 de 0</span>
 </header>
+
+<div class="controls">
+    <input type="text" id="busca" placeholder="Pesquisar cliente ou promotor...">
+    <div class="toggle">
+        <label>
+            <input type="checkbox" id="autoMsg" checked>
+            Enviar mensagem automática
+        </label>
+    </div>
+</div>
 
 <div class="container" id="lista"></div>
 
+<div class="pagination">
+    <button id="prev">⬅ Anterior</button>
+    <button id="next">Próximo ➡</button>
+</div>
+
 <script>
-// ======= COLE SEU CSV AQUI (EXATAMENTE COMO ELE É) =======
+// ===== SENHA =====
+function verificarSenha() {
+    if (document.getElementById("senha").value === "0419") {
+        document.getElementById("loginOverlay").classList.add("hide");
+        carregarCSV();
+    } else {
+        alert("Senha incorreta!");
+    }
+}
+
+// ===== CSV (COLE O SEU COMPLETO AQUI) =====
 const CSV_DATA = `
 CADASTRO	ULTIMOACESSO	ID	APELIDO	NOME	WHATSAPP	PROMOTOR
 11/01/26 21:49	14/01/26 17:05	1478221	PEDRO DE JESUS DE ARAÚJO	PEDRO DE JESUS DE ARAUJO	11976867299	PROMOTOR CARLOS HENRIQUE
@@ -2492,52 +2601,86 @@ CADASTRO	ULTIMOACESSO	ID	APELIDO	NOME	WHATSAPP	PROMOTOR
 05/10/25 17:41		1323515	OTHMAN		62791324840	MARKETING TRÁFEGO PAGO
 22/08/25 14:04		1210876	CRIS		71992282527	PROMOTORA SARA
 16/06/25 19:47		1051645	MARCELO		21985794884	ALEXANDRE GEREMIAS CAMARA
-
-
 `;
-// ======= FIM DO CSV =======
 
-(function processarCSV() {
-    const texto = CSV_DATA.replace(/\uFEFF/g, "").trim();
-    const linhas = texto.split(/\r?\n/);
+// ===== MENSAGEM =====
+const MENSAGEM = `Olá! 😊
+Quero te indicar uma banca muito boa: Sorte Club 🍀
 
-    const lista = document.getElementById("lista");
-    const totalSpan = document.getElementById("total");
+👉 https://app.sorteclub.com/pr/Wqz0l6Qw`;
 
-    let total = 0;
+const LIMITE = 10;
+let pagina = 1;
+let dados = [];
+let filtrados = [];
 
+function carregarCSV() {
+    const linhas = CSV_DATA.trim().split(/\r?\n/);
     for (let i = 1; i < linhas.length; i++) {
-        if (!linhas[i].trim()) continue;
+        const c = linhas[i].split("\t");
+        if (c.length < 7) continue;
+        dados.push({ apelido: c[3], whatsapp: c[5], promotor: c[6] });
+    }
+    filtrados = [...dados];
+    renderizar();
+}
 
-        const colunas = linhas[i].split("\t");
+function renderizar() {
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "";
 
-        if (colunas.length < 7) continue;
+    const inicio = (pagina - 1) * LIMITE;
+    const fim = inicio + LIMITE;
+    const paginaDados = filtrados.slice(inicio, fim);
 
-        const apelido = colunas[3].trim();
-        const whatsapp = colunas[5].trim();
-        const promotor = colunas[6].trim();
-
-        if (!apelido || !whatsapp) continue;
-
+    paginaDados.forEach(item => {
         const card = document.createElement("div");
         card.className = "card";
-
         card.innerHTML = `
-            <div class="nome">${apelido}</div>
-            <div class="numero">📞 ${whatsapp}</div>
-            <div class="promotor">${promotor}</div>
+            <div class="nome">${item.apelido}</div>
+            <div class="numero">📞 ${item.whatsapp}</div>
+            <div class="promotor">${item.promotor}</div>
         `;
-
-        card.addEventListener("click", () => {
-            window.open("https://wa.me/55" + whatsapp, "_blank");
-        });
-
+        card.onclick = () => {
+            let url = "https://wa.me/55" + item.whatsapp;
+            if (document.getElementById("autoMsg").checked) {
+                url += "?text=" + encodeURIComponent(MENSAGEM);
+            }
+            window.open(url, "_blank");
+        };
         lista.appendChild(card);
-        total++;
-    }
+    });
 
-    totalSpan.textContent = "Total de Clientes: " + total;
-})();
+    const exibidos = Math.min(pagina * LIMITE, filtrados.length);
+    document.getElementById("total").textContent =
+        `Exibindo ${exibidos} de ${filtrados.length} clientes`;
+
+    document.getElementById("prev").disabled = pagina === 1;
+    document.getElementById("next").disabled = fim >= filtrados.length;
+}
+
+document.getElementById("prev").onclick = () => {
+    if (pagina > 1) {
+        pagina--;
+        renderizar();
+    }
+};
+document.getElementById("next").onclick = () => {
+    if (pagina * LIMITE < filtrados.length) {
+        pagina++;
+        renderizar();
+    }
+};
+
+document.getElementById("busca").oninput = e => {
+    const t = e.target.value.toLowerCase();
+    filtrados = dados.filter(d =>
+        d.apelido.toLowerCase().includes(t) ||
+        d.promotor.toLowerCase().includes(t)
+    );
+    pagina = 1;
+    renderizar();
+};
 </script>
 
 </body>
