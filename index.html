@@ -67,10 +67,11 @@ header span {
 <div class="container" id="lista"></div>
 
 <script>
-fetch("./clientes.csv")
-.then(r => r.text())
+const CSV_URL = "https://raw.githubusercontent.com/feiteciravip/brazzclientes/main/clientes.csv";
+
+fetch(CSV_URL)
+.then(res => res.text())
 .then(texto => {
-    // Remove BOM e normaliza linhas
     texto = texto.replace(/\uFEFF/g, "");
     const linhas = texto.split(/\r?\n/);
 
@@ -84,10 +85,11 @@ fetch("./clientes.csv")
 
         const colunas = linhas[i].split("\t");
 
-        // Garante índices corretos
-        const apelido = colunas[3]?.trim();
-        const whatsapp = colunas[5]?.trim();
-        const promotor = colunas[6]?.trim();
+        if (colunas.length < 7) continue;
+
+        const apelido = colunas[3].trim();
+        const whatsapp = colunas[5].trim();
+        const promotor = colunas[6].trim();
 
         if (!apelido || !whatsapp) continue;
 
