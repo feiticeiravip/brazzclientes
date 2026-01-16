@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Clientes WhatsApp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0b0b0b;
+            color: #fff;
+        }
+
+        h1 {
+            text-align: center;
+            padding: 15px;
+            margin: 0;
+            background: #111;
+        }
+
+        .container {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 15px;
+        }
+
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .card:hover {
+            background: #00ff88;
+            color: #000;
+        }
+
+        .nome {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .numero {
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+
+        .promotor {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+<h1>📱 Clientes WhatsApp</h1>
+
+<div class="container" id="lista"></div>
+
+<script>
+async function carregarCSV() {
+    const response = await fetch("clientes.csv");
+    const texto = await response.text();
+
+    const linhas = texto.trim().split("\n");
+    const container = document.getElementById("lista");
+
+    linhas.forEach(linha => {
+        const colunas = linha.split("\t");
+
+        // Índices conforme seu CSV
+        const apelido = colunas[3];
+        const whatsapp = colunas[5];
+        const promotor = colunas[6];
+
+        if (!apelido || !whatsapp) return;
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+            <div class="nome">${apelido}</div>
+            <div class="numero">📞 ${whatsapp}</div>
+            <div class="promotor">${promotor}</div>
+        `;
+
+        card.onclick = () => {
+            window.open(
+                `https://wa.me/55${whatsapp}`,
+                "_blank"
+            );
+        };
+
+        container.appendChild(card);
+    });
+}
+
+carregarCSV();
+</script>
+
+</body>
+</html>
