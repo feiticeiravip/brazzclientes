@@ -61,18 +61,25 @@ header span {
 
 <header>
     <h1>📱 Clientes WhatsApp</h1>
-    <span id="total">Carregando...</span>
+    <span id="total">0 clientes</span>
 </header>
 
 <div class="container" id="lista"></div>
 
 <script>
-const CSV_URL = "https://raw.githubusercontent.com/feiteciravip/brazzclientes/main/clientes.csv";
+// ======= COLE SEU CSV AQUI (EXATAMENTE COMO ELE É) =======
+const CSV_DATA = `
+CADASTRO	ULTIMOACESSO	ID	APELIDO	NOME	WHATSAPP	PROMOTOR
+11/01/26 21:49	14/01/26 17:05	1478221	PEDRO DE JESUS DE ARAÚJO	PEDRO DE JESUS DE ARAUJO	11976867299	PROMOTOR CARLOS HENRIQUE
+24/09/25 14:48	14/01/26 17:04	1300422	AURELUCE DE RAMOS PEREIRA	AURELUCE DE RAMOS PEREIRA	38991967417	DAVI MARTINS DA SILVA
+09/01/26 15:06	14/01/26 16:58	1473905	RODRIGO	RODRIGO MATHEUS UCHOA FRIZZO	51996401464	MAICO BERNARDON
+28/06/25 09:39	14/01/26 16:58	1077497	MARLUZIA DIAS ROGERIO	MARLUZIA DIAS ROGERIO	27998027247	PROMOTORA EDILENE GOMES RODRIGUES
+09/12/25 11:01	14/01/26 16:55	1428707	ADRIANO ALVES DE OLIVEIRA	ADRIANO ALVES DE OLIVEIRA	11982537230	PR0MOTORA JO
+`;
+// ======= FIM DO CSV =======
 
-fetch(CSV_URL)
-.then(res => res.text())
-.then(texto => {
-    texto = texto.replace(/\uFEFF/g, "");
+(function processarCSV() {
+    const texto = CSV_DATA.replace(/\uFEFF/g, "").trim();
     const linhas = texto.split(/\r?\n/);
 
     const lista = document.getElementById("lista");
@@ -95,26 +102,23 @@ fetch(CSV_URL)
 
         const card = document.createElement("div");
         card.className = "card";
+
         card.innerHTML = `
             <div class="nome">${apelido}</div>
             <div class="numero">📞 ${whatsapp}</div>
             <div class="promotor">${promotor}</div>
         `;
 
-        card.onclick = () => {
+        card.addEventListener("click", () => {
             window.open("https://wa.me/55" + whatsapp, "_blank");
-        };
+        });
 
         lista.appendChild(card);
         total++;
     }
 
     totalSpan.textContent = "Total de Clientes: " + total;
-})
-.catch(err => {
-    document.getElementById("total").textContent = "Erro ao carregar CSV";
-    console.error(err);
-});
+})();
 </script>
 
 </body>
